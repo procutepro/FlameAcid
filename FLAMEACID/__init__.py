@@ -6,6 +6,7 @@ messages = [
     "Hi from pratyush the idiot",
     "Frogs are watching you code",
     "If it crashes, it's a feature",
+    "You are using a engine most people dispise"
 ]
 
 print(random.choice(messages))
@@ -14,7 +15,7 @@ print(random.choice(messages))
 ACID Engine - Game engine for Morons.
 """
 
-__version__ = "0.1.0-frog-edition"
+__version__ = "0.1.1-frog-edition"
 __author__ = "Pratyush Wani"
 __license__ = "MIT"
 

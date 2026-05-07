@@ -2,7 +2,7 @@
 <img width="64" height="64" alt="acid_logo" src="https://github.com/user-attachments/assets/5ea80193-14a5-4e91-85fc-f3338ab674bd" />
 
 
-#Acid sucks... so i copy pasted it until it doesn't
+# Acid sucks... so i copy pasted it until it doesn't
 
 ---
 

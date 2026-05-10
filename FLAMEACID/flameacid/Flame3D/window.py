@@ -3,8 +3,11 @@ import pygame as pg
 import glm
 import sys
 import numpy as np
-import Flame3D.obj_laoder as obj
+import FLAMEACID.flameacid.Flame3D.obj_laoder as obj
 import os
+from pathlib import Path
+
+BASE = Path(__file__).parent
 
 def send_my_friend_to_gf_gpu(shader, stuff, name):
     shader[name].write(stuff)
@@ -152,8 +155,8 @@ class Window:
 
         self.shaders = {}
 
-        vert_source = r"Flame3D\\shaders\\default.vert"
-        frag_source = r"Flame3D\\shaders\\default.frag"
+        vert_source = BASE / r"shaders\default.vert"
+        frag_source = BASE / r"shaders\default.frag"
 
         self.load_shader("default", vert_source, frag_source)
 

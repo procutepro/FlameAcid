@@ -6,22 +6,41 @@ import numpy as np
 import FLAMEACID.flameacid.Flame3D.obj_laoder as obj
 import os
 from pathlib import Path
+import struct
 
 BASE = Path(__file__).parent
 
 def send_my_friend_to_gf_gpu(shader, stuff, name):
-    shader[name].write(stuff)
+    if isinstance(stuff, tuple) or isinstance(stuff, list):
+        # Convert tuple/list to bytes for vec3, vec4, etc.
+        if len(stuff) == 3:
+            # vec3: 3 floats = 12 bytes
+            packed = struct.pack('fff', stuff[0], stuff[1], stuff[2])
+        elif len(stuff) == 4:
+            # vec4: 4 floats = 16 bytes
+            packed = struct.pack('ffff', stuff[0], stuff[1], stuff[2], stuff[3])
+        else:
+            packed = bytes(stuff)
+    elif isinstance(stuff, (int, float)):
+        # Single value
+        packed = struct.pack('f', float(stuff))
+    else:
+        packed = bytes(stuff)
+    
+    shader[name].write(packed)
 
 class Mesh:
-    def __init__(self, model_path, pos, size, rotation, ctx, shader_name):
+    def __init__(self, model_path, pos, size, rotation, ctx, shader_name, rendering_type=mgl.NEAREST):
         self.pos = pos
         self.size = size
         self.rotation = rotation
+        self.rendering_type = rendering_type
 
         self.model_path = model_path
         self.ctx = ctx
 
         model_data = obj.load_obj(model_path)
+        self.model_data = model_data
         faces = model_data[0]
         self.name = model_data[1]
         self.mtlfile = model_data[2]
@@ -30,11 +49,6 @@ class Mesh:
             vbo_data.extend(tri)
 
         self.shader = self.ctx.shaders[shader_name]
-        
-        self.vbo = ctx.ctx.buffer(np.array(vbo_data, dtype='f4').tobytes())
-        self.vao = ctx.ctx.vertex_array(self.shader, [
-            (self.vbo, '3f 2f', 'in_position', 'in_uv')
-        ])
 
         self.transform_matrix = self.get_model_matrix()
 
@@ -42,9 +56,36 @@ class Mesh:
 
         self.load_texture()
 
+        self.set_up_vao_vbo(vbo_data)
+
+    def set_up_vao_vbo(self, vbo_data):
+        self.vbo = self.ctx.ctx.buffer(np.array(vbo_data, dtype='f4').tobytes())
+        self.vao = self.ctx.ctx.vertex_array(self.shader, [
+            (self.vbo, '3f 2f', 'in_position', "in_uv")
+        ])
+
+        print(self.color)
+        print(self.texture)
+        """
+        if self.color[0] != None:
+            print("color")
+            self.vao = self.ctx.ctx.vertex_array(self.shader, [
+                (self.vbo, '3f', 'in_position')
+            ])
+
+        if self.texture:
+            print("texture")
+            self.vao = self.ctx.ctx.vertex_array(self.shader, [
+                (self.vbo, '3f 2f', 'in_position', "in_uv")
+            ])
+
+        """
+
     def load_texture(self):
 
         path = ""
+        self.color = [None, None, None]
+        self.texture = None
         
         with open(self.mtlfile) as f:
             data = f.readlines()
@@ -56,13 +97,22 @@ class Mesh:
             if cmd == "map_Kd":
                 path = parts[0]
 
-        img = pg.image.load(path.strip())
-        img = pg.transform.flip(img, False, True)
-        img_data = pg.image.tostring(img, 'RGBA', True)
+            if cmd == "Kd":
+                self.color[0] = glm.floor(float(parts[0])*255)
+                self.color[1] = glm.floor(float(parts[1])*255)
+                self.color[2] = glm.floor(float(parts[2])*255)
+                #self.color[0] = float(parts[0])
+                #self.color[1] = float(parts[1])
+                #self.color[2] = float(parts[2])
 
-        self.texture = self.ctx.ctx.texture(img.get_size(), 4, img_data)
-        self.texture.filter = (mgl.NEAREST, mgl.NEAREST)
-    
+        if path != "":
+            img = pg.image.load(path.strip())
+            img = pg.transform.flip(img, False, True)
+            img_data = pg.image.tostring(img, 'RGBA', True)
+
+            self.texture = self.ctx.ctx.texture(img.get_size(), 4, img_data)
+            self.texture.filter = (self.rendering_type, self.rendering_type)
+
     def get_model_matrix(self):
         model = glm.mat4()
         model = glm.translate(model, self.pos)
@@ -75,13 +125,26 @@ class Mesh:
         aspect = self.ctx.size[0]/self.ctx.size[1]
         self.mat = glm.perspective(self.ctx.camera.fovy, aspect, self.ctx.camera.near, self.ctx.camera.far)
     
-    def render(self):
+    def render(self, use_texture="texture", **uniforms):
         self.shader['u_model'].write(self.transform_matrix)
         self.shader['u_view'].write(self.ctx.camera.mat)
         self.shader['u_projection'].write(self.mat)
-        if hasattr(self, 'texture'):
+
+        if use_texture == "texture":
             self.texture.use()
             self.shader['u_texture'].value = 0
+            send_my_friend_to_gf_gpu(self.shader, 1, "u_use_texture")
+
+        elif use_texture == "color" or not self.color[0]:
+            send_my_friend_to_gf_gpu(self.shader, tuple(self.color), "u_color")
+            send_my_friend_to_gf_gpu(self.shader, 0, "u_use_texture")
+
+        if uniforms:
+            for i in uniforms.keys():
+                name = i
+                uniform = uniforms[name]
+                send_my_friend_to_gf_gpu(self.shader, uniform, name)
+
         self.vao.render()
 
 class Camera:

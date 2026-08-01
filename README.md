@@ -11,26 +11,26 @@
 first wait i ahve bullet points
 1. download FlameAcid from source
 2. unzip it and get the orignal copy
-3. find site packages though ```pip show lib-you-have```
+3. find site packages though ```pip show pip```
 4. copy FLAMEACID and put it in site packages
 
 ---
 
 ## Libs to download so i don't get sued by numpy
 
-numpy... for maths ig
+numpy... for maths ig. pip install numpy
 
-pygame... for rendering
+pygame... for rendering. pip install pygame
 
-opengl... for more rendering
+opengl... for more rendering. pip install moderngl(you probably don't need this)
 
-json wait why am i adding this
+json wait why am i adding this. in-built
 
-toml wait what
+toml wait what. don't need it
 
-pillow... to sleep on
+pillow... to sleep on. pip install pillow
 
-math... for elementary maths
+math... for elementary maths. in-built
 
 ---
 
@@ -57,7 +57,7 @@ yeah thats literary it... change the pygame to opengl and boom you are good
 #how the fuck did i forget how to use my own engine
 #me remeber
 #between fill and update there goes the drawing shapes thing idfk
-#SHUT THE FUCKING YAP UP
+#SHUT THE FU##ING YAP UP
 #ok i will :(
 
 while screen.Bro_Running:
